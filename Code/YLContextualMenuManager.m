@@ -214,7 +214,9 @@ static YLContextualMenuManager *gSharedInstance;
 - (IBAction) google: (id)sender
 {
     NSString *u = [sender representedObject];
-    u = [@"http://www.google.com/search?q=" stringByAppendingString: [u stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding]];
+    u = [u stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
+    u = [u stringByReplacingOccurrencesOfString:@"+" withString:@"%2b"];        // Manually escape "+" (plus sign)
+    u = [@"http://www.google.com/search?q=" stringByAppendingString: u];
     [[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: u]];
 }
 
