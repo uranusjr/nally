@@ -215,7 +215,12 @@ static YLContextualMenuManager *gSharedInstance;
 {
     NSString *u = [sender representedObject];
     u = [u stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
-    u = [u stringByReplacingOccurrencesOfString:@"+" withString:@"%2b"];        // Manually escape "+" (plus sign)
+    NSString *additionals = @"+&";  // Specify additional replacing needed
+    u = (NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,        // default allocator
+                                                            (CFStringRef)u,             // original string
+                                                            NULL,                       // replace all illegal characters
+                                                            (CFStringRef)additionals,   // replace legal characters specified
+                                                            kCFStringEncodingUTF8);     // use UTF-8
     u = [@"http://www.google.com/search?q=" stringByAppendingString: u];
     [[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: u]];
 }
