@@ -38,7 +38,7 @@ static YLContextualMenuManager *gSharedInstance;
 
 @interface NSString (UJStringUrlCategory)
 - (BOOL) UJ_isUrlLike;
-- (NSString *) UJ_protocolPrefixAppendedUrlString;
+- (NSString *) UJ_stringByPrependingUrlProtocol;
 @end
 
 @implementation NSString (UJStringUrlCategory)
@@ -59,7 +59,7 @@ static YLContextualMenuManager *gSharedInstance;
     return NO;
 }
 
-- (NSString *) UJ_protocolPrefixAppendedUrlString
+- (NSString *) UJ_stringByPrependingUrlProtocol
 {
     NSArray *protocols = [NSArray arrayWithObjects:@"http://", @"https://", @"ftp://", @"telnet://",
                           @"bbs://", @"ssh://", @"mailto:", nil];
@@ -109,7 +109,7 @@ static YLContextualMenuManager *gSharedInstance;
         for (NSString *block in blocks)
         {
             if ([block UJ_isUrlLike])
-                [urls addObject:[block UJ_protocolPrefixAppendedUrlString]];
+                [urls addObject:[block UJ_stringByPrependingUrlProtocol]];
         }
 
         // Create menu items
@@ -198,7 +198,7 @@ static YLContextualMenuManager *gSharedInstance;
     NSMutableArray *urls = [NSMutableArray array];
     for (NSString *u in _urlsToOpen)
     {
-        u = [u UJ_protocolPrefixAppendedUrlString];
+        u = [u UJ_stringByPrependingUrlProtocol];
         [urls addObject:[NSURL URLWithString:[u stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]]];
     }
 
