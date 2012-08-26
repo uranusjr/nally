@@ -214,7 +214,6 @@ static YLContextualMenuManager *gSharedInstance;
 - (IBAction) google: (id)sender
 {
     NSString *u = [sender representedObject];
-    u = [u stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
     NSString *additionals = @"+&";  // Specify additional replacing needed
     u = (NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,        // default allocator
                                                             (CFStringRef)u,             // original string
