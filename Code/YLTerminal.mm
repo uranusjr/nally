@@ -1096,7 +1096,7 @@ if (_cursorX <= _column - 1) { \
     BOOL urlState = NO;
     
     if (r > 0) 
-        urlState = _grid[r - 1][_column - 1].attr.f.url;
+        urlState = _grid[r - 1][_column - 2].attr.f.url;
     
     int i;
     for (i = 0; i < _column; i++) {
@@ -1155,7 +1155,8 @@ if (_cursorX <= _column - 1) { \
     while (_grid[r][c].attr.f.url) {
         [urlString appendFormat: @"%c", _grid[r][c].byte];
         c++;
-        if (c >= _column) {
+        if ((c >= _column - 2 && _grid[r][c].byte == '\\')    // Breaked long URL detection
+            || c >= _column) {
             c = 0;
             r++;
         }
