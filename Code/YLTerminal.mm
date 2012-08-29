@@ -1095,7 +1095,7 @@ if (_cursorX <= _column - 1) { \
     
     BOOL urlState = NO;
     
-    if (r > 0) 
+    if (r > 0 && _grid[r - 1][_column - 2].byte == '\\')    // Detect system-breaked long URL
         urlState = _grid[r - 1][_column - 2].attr.f.url;
     
     int i;
