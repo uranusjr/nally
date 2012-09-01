@@ -1138,15 +1138,23 @@ if (_cursorX <= _column - 1) { \
     while (_grid[r][c].attr.f.url) {
         c--;
         if (c < 0) {
-            c = _column - 2;
-            r--;
+            // Peek whether there is a previous line of breaked URL
+            if (r != 0 && _grid[r - 1][_column - 2].byte == '\\')
+            {
+                c = _column - 2;
+                r--;
+            }
+            else
+            {
+                break;
+            }
         }
-        if (r < 0) 
+        if (r < 0)
             break;
     }
     
     c++;
-    if (c >= _column - 1)
+    if (c >= _column)
     {
         c = 0;
         r++;
