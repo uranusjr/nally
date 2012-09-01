@@ -1138,7 +1138,7 @@ if (_cursorX <= _column - 1) { \
     while (_grid[r][c].attr.f.url) {
         c--;
         if (c < 0) {
-            c = _column - 1;
+            c = _column - 2;
             r--;
         }
         if (r < 0) 
@@ -1146,7 +1146,8 @@ if (_cursorX <= _column - 1) { \
     }
     
     c++;
-    if (c >= _column) {
+    if (c >= _column - 1)
+    {
         c = 0;
         r++;
     }
