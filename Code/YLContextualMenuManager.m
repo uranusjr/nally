@@ -37,11 +37,31 @@ static YLContextualMenuManager *gSharedInstance;
 @end
 
 @interface NSString (UJStringUrlCategory)
++ (NSArray *)UJ_urlProtocols;
+- (BOOL) UJ_hasProtocolPrefix;
 - (BOOL) UJ_isUrlLike;
 - (NSString *) UJ_stringByPrependingUrlProtocol;
+- (NSString *) UJ_stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding
+                                 excludingIllegalCharacters:(NSString *)exclusions
+                                   includingLegalCharacters:(NSString *)inclusions;
 @end
 
 @implementation NSString (UJStringUrlCategory)
++ (NSArray *)UJ_urlProtocols
+{
+    return [NSArray arrayWithObjects:@"http://", @"https://", @"ftp://", @"telnet://", @"bbs://", @"ssh://", @"mailto:", nil];
+}
+
+- (BOOL) UJ_hasProtocolPrefix
+{
+    for (NSString *p in [NSString UJ_urlProtocols])
+    {
+        if ([self hasPrefix:p])
+            return YES;
+    }
+    return NO;
+}
+
 - (BOOL) UJ_isUrlLike
 {
     NSArray *comps = [self componentsSeparatedByString:@"."];
@@ -69,6 +89,20 @@ static YLContextualMenuManager *gSharedInstance;
             return self;
     }
     return [@"http://" stringByAppendingString:self];
+}
+
+- (NSString *) UJ_stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding
+                                 excludingIllegalCharacters:(NSString *)exclusions
+                                   includingLegalCharacters:(NSString *)inclusions
+{
+    CFStringRef cfUrl = CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
+                                                                (CFStringRef)self,
+                                                                (CFStringRef)exclusions,
+                                                                (CFStringRef)inclusions,
+                                                                CFStringConvertNSStringEncodingToEncoding(encoding));
+    NSString *url = [NSString stringWithString:(NSString *)cfUrl];
+    CFRelease(cfUrl);
+    return url;
 }
 
 @end
@@ -100,38 +134,72 @@ static YLContextualMenuManager *gSharedInstance;
     
     if ([longURL UJ_isUrlLike])
     {
+        // Revert breaked multi-line URLs
+        longURL = [longURL stringByReplacingOccurrencesOfString:@"\\\r" withString:@""];
+    
         // Split the selected text into blocks seperated by one of the characters in seps
         NSCharacterSet *seps = [NSCharacterSet characterSetWithCharactersInString:@" \r\n"];
         NSArray *blocks = [longURL componentsSeparatedByCharactersInSet:seps];
 
-        // Use out only lines that really are URLs
-        NSMutableArray *urls = [NSMutableArray array];
-        for (NSString *block in blocks)
+        // Distinguish selected text's URL state
+        BOOL firstOnlyProtocol = NO;
+        if ([blocks count] > 1 && [[blocks objectAtIndex:0] UJ_hasProtocolPrefix])
         {
-            if ([block UJ_isUrlLike])
-                [urls addObject:[block UJ_stringByPrependingUrlProtocol]];
+            firstOnlyProtocol = YES;
+            for (NSString *subsq in [blocks subarrayWithRange:NSMakeRange(1, [blocks count] - 1)])
+            {
+                if ([subsq UJ_hasProtocolPrefix])
+                {
+                    firstOnlyProtocol = NO;
+                    break;
+                }
+            }
         }
-
-        // Create menu items
-        // If there is only one line, then use the text as title
-        // Otherwise use the localized string of "Open mutiple URLs"
         
-        if ([urls count] > 0)
+        // Type 1 (YES): _ONLY_ the first line has protocol prefix.
+        // Concatenate all components into one single URL
+        if (firstOnlyProtocol)
         {
-            NSString *title = @"";
-            if ([urls count] > 1)
-                title = NSLocalizedString(@"Open mutiple URLs", @"Open mutiple URLs");
-            else if ([urls count] == 1)
-                title = [urls objectAtIndex: 0];
-
+            NSString *url = [blocks componentsJoinedByString:@""];
             if (_urlsToOpen)
                 [_urlsToOpen release];
-            _urlsToOpen = [urls copy];
-            item = [[[NSMenuItem alloc] initWithTitle: title
+            _urlsToOpen = [[NSArray alloc] initWithObjects:url, nil];
+            item = [[[NSMenuItem alloc] initWithTitle: url
                                                action: @selector(openURL:)
                                         keyEquivalent: @""] autorelease];
             [item setTarget: self];
             [items addObject: item];
+        }
+        // Type 2 (NO)
+        // Treat each component as an individual URL
+        else
+        {
+            NSMutableArray *urls = [NSMutableArray array];
+            for (NSString *block in blocks)
+            {
+                if ([block UJ_isUrlLike])
+                    [urls addObject:[block UJ_stringByPrependingUrlProtocol]];
+            }
+            
+            if ([urls count] > 0)
+            {
+                // If there is only one line, then use the text as title
+                // Otherwise use the localized string of "Open mutiple URLs"
+                NSString *title;
+                if ([urls count] > 1)
+                    title = NSLocalizedString(@"Open as mutiple URLs", @"Open as mutiple URLs");
+                else if ([urls count] == 1)
+                    title = [urls objectAtIndex: 0];
+                
+                if (_urlsToOpen)
+                    [_urlsToOpen release];
+                _urlsToOpen = [urls copy];
+                item = [[[NSMenuItem alloc] initWithTitle: title
+                                                   action: @selector(openURL:)
+                                            keyEquivalent: @""] autorelease];
+                [item setTarget: self];
+                [items addObject: item];
+            }
         }
     }
 
@@ -199,7 +267,11 @@ static YLContextualMenuManager *gSharedInstance;
     for (NSString *u in _urlsToOpen)
     {
         u = [u UJ_stringByPrependingUrlProtocol];
-        [urls addObject:[NSURL URLWithString:[u stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]]];
+        NSString *exclusions = @"#";    // # is usually an anchor sign, not an unescaped URL character
+        u = [u UJ_stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding
+                                 excludingIllegalCharacters:exclusions
+                                   includingLegalCharacters:nil];
+        [urls addObject:[NSURL URLWithString:u]];
     }
 
     [[NSWorkspace sharedWorkspace] openURLs:urls
@@ -215,14 +287,11 @@ static YLContextualMenuManager *gSharedInstance;
 {
     NSString *u = [sender representedObject];
     NSString *additionals = @"+&";  // Specify additional replacing needed
-    CFStringRef url = CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,      // default allocator
-                                                              (CFStringRef)u,           // original string
-                                                              NULL,                     // replace all illegal characters
-                                                              (CFStringRef)additionals, // replace legal characters specified
-                                                              kCFStringEncodingUTF8);   // use UTF-8
-    u = [@"http://www.google.com/search?q=" stringByAppendingString: [NSString stringWithString:(NSString *)url]];
-    [[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: u]];
-    CFRelease(url);
+    u = [u UJ_stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding
+                             excludingIllegalCharacters:nil
+                               includingLegalCharacters:additionals];
+    u = [@"http://www.google.com/search?q=" stringByAppendingString: [NSString stringWithString:u]];
+    [[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString:u]];
 }
 
 - (IBAction) lookupDictionary: (id)sender
@@ -232,7 +301,6 @@ static YLContextualMenuManager *gSharedInstance;
     [spb declareTypes: [NSArray arrayWithObject: NSStringPboardType] owner: self];
     [spb setString: u forType: NSStringPboardType];
     NSPerformService(@"Look Up in Dictionary", spb);
-    
 }
 
 @end

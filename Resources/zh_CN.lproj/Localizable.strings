@@ -13,7 +13,7 @@
 /* Menu */
 "Lookup in Dictionary" = "查字典";
 "Copy" = "复制";
-"Open mutiple URLs" = "打开多个链结";
+"Open mutiple URLs" = "作为多个链结打开";
 
 /* Default Button */
 "Quit" = "退出";
