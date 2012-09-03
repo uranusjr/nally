@@ -215,13 +215,14 @@ static YLContextualMenuManager *gSharedInstance;
 {
     NSString *u = [sender representedObject];
     NSString *additionals = @"+&";  // Specify additional replacing needed
-    u = (NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,        // default allocator
-                                                            (CFStringRef)u,             // original string
-                                                            NULL,                       // replace all illegal characters
-                                                            (CFStringRef)additionals,   // replace legal characters specified
-                                                            kCFStringEncodingUTF8);     // use UTF-8
-    u = [@"http://www.google.com/search?q=" stringByAppendingString: u];
+    CFStringRef url = CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,      // default allocator
+                                                              (CFStringRef)u,           // original string
+                                                              NULL,                     // replace all illegal characters
+                                                              (CFStringRef)additionals, // replace legal characters specified
+                                                              kCFStringEncodingUTF8);   // use UTF-8
+    u = [@"http://www.google.com/search?q=" stringByAppendingString: [NSString stringWithString:(NSString *)url]];
     [[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: u]];
+    CFRelease(url);
 }
 
 - (IBAction) lookupDictionary: (id)sender
