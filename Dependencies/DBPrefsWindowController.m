@@ -8,7 +8,7 @@
 
 static DBPrefsWindowController *_sharedPrefsWindowController = nil;
 
-@interface DBPrefsWindowController (Private)
+@interface DBPrefsWindowController (Private) <NSAnimationDelegate, NSToolbarDelegate>
 - (void) setupMenuOfURLScheme: (NSString *) scheme forPopUpButton: (NSPopUpButton *) button ;
 + (NSArray *) applicationIdentifierArrayForURLScheme: (NSString *) scheme ;
 @end

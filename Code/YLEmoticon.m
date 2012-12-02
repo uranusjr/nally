@@ -19,9 +19,17 @@
     return [e autorelease];    
 }
 
-+ (void) initialize 
++ (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key
 {
-    [self setKeys: [NSArray arrayWithObjects: @"content", nil] triggerChangeNotificationsForDependentKey: @"description"];
+    NSSet *paths = [super keyPathsForValuesAffectingValueForKey:key];
+    if ([key isEqualToString:@"description"])
+    {
+        if (paths)
+            paths = [paths setByAddingObject:@"content"];
+        else
+            paths = [NSSet setWithObject:@"content"];
+    }
+    return paths;
 }
 
 - (NSDictionary *) dictionaryOfEmoticon
