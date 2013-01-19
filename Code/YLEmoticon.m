@@ -16,7 +16,7 @@
     YLEmoticon *e = [[YLEmoticon alloc] init];
 //    [e setName: [d valueForKey: @"name"]];
     [e setContent: [dict valueForKey: @"content"]];
-    return [e autorelease];    
+    return [e autorelease];
 }
 
 + (NSSet *)keyPathsForValuesAffectingValueForKey:(NSString *)key
@@ -32,11 +32,16 @@
     return paths;
 }
 
++ (NSSet *) keyPathsForValuesAffectingDescription
+{
+	return [NSSet setWithObjects: @"content", nil];
+}
+
 - (NSDictionary *) dictionaryOfEmoticon
 {
     return [NSDictionary dictionaryWithObjectsAndKeys: [self content], @"content", nil];
 }
-     
+
 + (YLEmoticon *) emoticonWithName: (NSString *)n content: (NSString *)c
 {
     YLEmoticon *e = [YLEmoticon new];
